@@ -25,3 +25,15 @@ knife4j:
   setting:
     language: zh_cn
 
+# AI
+langchain4j:
+  open-ai:
+    chat-model:
+      base-url: https://api.moonshot.cn/v1 # https://api.deepseek.com
+      api-key: xxxx
+      model-name: kimi-k2-turbo-preview # deepseek-chat
+      log-requests: true
+      log-responses: true
+      max-retries: 0
+      timeout: 120000
+      max-tokens: 8192
