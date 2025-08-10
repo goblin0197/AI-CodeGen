@@ -1,6 +1,7 @@
 package com.goblin.aicodergenerater.ai.core;
 
 import com.goblin.aicodergenerater.ai.AiCodeGeneratorService;
+import com.goblin.aicodergenerater.ai.config.AiCodeGeneratorServiceFactory;
 import com.goblin.aicodergenerater.ai.enums.CodeGenTypeEnum;
 import com.goblin.aicodergenerater.ai.model.HtmlCodeResult;
 import com.goblin.aicodergenerater.ai.model.MultiFileCodeResult;
@@ -24,9 +25,11 @@ import java.io.File;
 @Service
 public class AiCodeGeneratorFacade{
 
-    @Resource
-    private AiCodeGeneratorService aiCodeGeneratorService;
+//    @Resource
+//    private AiCodeGeneratorService aiCodeGeneratorService;
 
+    @Resource
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
     /**
      * 统一入口：根据类型生成并保存代码
      * @param userMessage
@@ -35,6 +38,7 @@ public class AiCodeGeneratorFacade{
      */
     public File generateAndSaveCode(String userMessage , CodeGenTypeEnum codeGenTypeEnum,Long appId){
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.SYSTEM_ERROR,"生成类型为空");
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum){
             case HTML -> {
                 HtmlCodeResult htmlCodeResult = aiCodeGeneratorService.generateHtmlCode(userMessage);
@@ -59,6 +63,7 @@ public class AiCodeGeneratorFacade{
      */
     public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum,Long appId) {
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.SYSTEM_ERROR,"生成类型为空");
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum){
             case HTML -> {
                 Flux<String> htmlCodeResult = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);

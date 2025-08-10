@@ -54,6 +54,12 @@
             <artifactId>HikariCP</artifactId>
             <version>4.0.3</version>
         </dependency>
+        <!-- Spring Session + Redis -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-data-redis</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
@@ -86,18 +92,31 @@
             <artifactId>langchain4j</artifactId>
             <version>1.2.0</version>
         </dependency>
-<!--        langchain4j stater-->
+<!--        langchain4j stater openAi模式接入大模型 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
             <version>1.2.0-beta8</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-reactor -->
+        <!-- https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-reactor 流式响应-->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-reactor</artifactId>
             <version>1.2.0-beta8</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-community-redis-spring-boot-starter -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-redis-spring-boot-starter</artifactId>
+            <version>1.3.0-beta9</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
