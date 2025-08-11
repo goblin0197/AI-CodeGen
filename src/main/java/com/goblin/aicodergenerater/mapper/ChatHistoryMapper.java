@@ -9,7 +9,6 @@ import org.apache.ibatis.annotations.Mapper;
  *
  * @author goblin
  */
-@Mapper
 public interface ChatHistoryMapper extends BaseMapper<ChatHistory> {
 
 }

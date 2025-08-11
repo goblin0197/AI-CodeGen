@@ -1,7 +1,7 @@
 package com.goblin.aicodergenerater.ai.core;
 
 import com.goblin.aicodergenerater.ai.AiCodeGeneratorService;
-import com.goblin.aicodergenerater.ai.config.AiCodeGeneratorServiceFactory;
+import com.goblin.aicodergenerater.ai.AiCodeGeneratorServiceFactory;
 import com.goblin.aicodergenerater.ai.enums.CodeGenTypeEnum;
 import com.goblin.aicodergenerater.ai.model.HtmlCodeResult;
 import com.goblin.aicodergenerater.ai.model.MultiFileCodeResult;
@@ -38,7 +38,7 @@ public class AiCodeGeneratorFacade{
      */
     public File generateAndSaveCode(String userMessage , CodeGenTypeEnum codeGenTypeEnum,Long appId){
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.SYSTEM_ERROR,"生成类型为空");
-        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId,codeGenTypeEnum);
         return switch (codeGenTypeEnum){
             case HTML -> {
                 HtmlCodeResult htmlCodeResult = aiCodeGeneratorService.generateHtmlCode(userMessage);
@@ -63,7 +63,7 @@ public class AiCodeGeneratorFacade{
      */
     public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenTypeEnum,Long appId) {
         ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.SYSTEM_ERROR,"生成类型为空");
-        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId,codeGenTypeEnum);
         return switch (codeGenTypeEnum){
             case HTML -> {
                 Flux<String> htmlCodeResult = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
@@ -72,6 +72,11 @@ public class AiCodeGeneratorFacade{
             case MULTI_FILE -> {
                 Flux<String> multiFileCodeResult = aiCodeGeneratorService.generateMultiFileCodeStream(userMessage);
                 yield processCodeStream(multiFileCodeResult, CodeGenTypeEnum.MULTI_FILE,appId);
+            }
+            case VUE_PROJECT -> {
+                Flux<String> codeStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
+//                Flux<String> codeStream = processTokenStream(tokenStream);
+                yield processCodeStream(codeStream, CodeGenTypeEnum.MULTI_FILE, appId);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
