@@ -1,15 +1,25 @@
 package com.goblin.aicodergenerater.ai.core;
 
+import cn.hutool.json.JSONUtil;
 import com.goblin.aicodergenerater.ai.AiCodeGeneratorService;
 import com.goblin.aicodergenerater.ai.AiCodeGeneratorServiceFactory;
 import com.goblin.aicodergenerater.ai.enums.CodeGenTypeEnum;
 import com.goblin.aicodergenerater.ai.model.HtmlCodeResult;
 import com.goblin.aicodergenerater.ai.model.MultiFileCodeResult;
+import com.goblin.aicodergenerater.ai.model.message.AiResponseMessage;
+import com.goblin.aicodergenerater.ai.model.message.ToolExecutedMessage;
+import com.goblin.aicodergenerater.ai.model.message.ToolRequestMessage;
 import com.goblin.aicodergenerater.core.parse.CodeParserExecutor;
 import com.goblin.aicodergenerater.core.saver.CodeFileSaverExecutor;
 import com.goblin.aicodergenerater.exception.BusinessException;
 import com.goblin.aicodergenerater.exception.ErrorCode;
 import com.goblin.aicodergenerater.exception.ThrowUtils;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.PartialThinking;
+import dev.langchain4j.model.chat.response.PartialToolCall;
+import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.tool.BeforeToolExecution;
+import dev.langchain4j.service.tool.ToolExecution;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -74,8 +84,8 @@ public class AiCodeGeneratorFacade{
                 yield processCodeStream(multiFileCodeResult, CodeGenTypeEnum.MULTI_FILE,appId);
             }
             case VUE_PROJECT -> {
-                Flux<String> codeStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-//                Flux<String> codeStream = processTokenStream(tokenStream);
+                TokenStream tokenStream = aiCodeGeneratorService.generateVueProjectCodeTokenStream(appId, userMessage);
+                Flux<String> codeStream = processTokenStream(tokenStream);
                 yield processCodeStream(codeStream, CodeGenTypeEnum.MULTI_FILE, appId);
             }
             default -> {
@@ -112,5 +122,74 @@ public class AiCodeGeneratorFacade{
             }
         });
     }
+
+
+//    private Flux<String> processTokenStream(TokenStream tokenStream) {
+//        return Flux.create(sink -> {
+//            tokenStream
+//                .beforeToolExecution((BeforeToolExecution toolExecution) -> {
+//                    System.out.println("1 准备调用工具beforeToolExecution ::AI 正在调用 "+toolExecution.request().name());
+//                })
+//                .onPartialThinking((PartialThinking partialThinking) -> {
+//                    System.out.println(" 思考内容 onPartialThinking ::{" + partialThinking + "}");
+//                })
+//                .onPartialResponse((String partialResponse) -> {
+//                    System.out.println("3 部分工具返回 onPartialResponse ::{" + partialResponse + "}");
+//                })
+////                        .onPartialToolExecutionRequest((index, toolExecutionRequest) -> {
+////                            System.out.println("{" + toolExecutionRequest + "}");
+////                        })
+//                .onToolExecuted((ToolExecution toolExecution) -> {
+//                    System.out.println("2 工具调用完成 onToolExecuted ::{" + toolExecution.result()+ "}");
+//                })
+//                .onCompleteResponse((ChatResponse response) -> {
+//                    System.out.println("4 完成后返回 onCompleteResponse::{" + response + "}");
+//                })
+//                .onError((Throwable error) -> {
+//                    error.printStackTrace();
+//                })
+//                .start();
+//        });
+//    }
+
+    /**
+     * 将 TokenStream 转换为 Flux<String>，并传递工具调用信息
+     *
+     * @param tokenStream TokenStream 对象
+     * @return Flux<String> 流式响应
+     */
+    private Flux<String> processTokenStream(TokenStream tokenStream) {
+        return Flux.create(sink -> {
+            tokenStream
+                    .onPartialResponse((String partialResponse) -> {
+                        log.info("触发onPartialResponse: {}", partialResponse); // 打印部分响应
+                        AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
+                        sink.next(JSONUtil.toJsonStr(aiResponseMessage));
+                    })
+                    .onPartialToolExecutionRequest((index, toolExecutionRequest) -> {
+                        log.info("触发onPartialToolExecutionRequest: {}", toolExecutionRequest.toString());
+                        ToolRequestMessage toolRequestMessage = new ToolRequestMessage(toolExecutionRequest);
+                        sink.next(JSONUtil.toJsonStr(toolRequestMessage));
+                    })
+                    .onToolExecuted((ToolExecution toolExecution) -> { // 工具执行结果
+                        log.info("触发onToolExecuted：{}",toolExecution.request().toString());
+                        ToolExecutedMessage toolExecutedMessage = new ToolExecutedMessage(toolExecution);
+                        sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
+                    })
+                    .onCompleteResponse((ChatResponse response) -> {
+//                        log.info("触发onCompleteResponse: {}", response.toString());
+                        sink.complete();
+                    })
+                    .onPartialThinking((PartialThinking partialThinking) -> {
+                        log.info("触发onPartialThinking: {}", partialThinking.text());
+                    })
+                    .onError((Throwable error) -> {
+                        error.printStackTrace();
+                        sink.error(error);
+                    })
+                    .start();
+        });
+    }
+
 
 }

@@ -24,6 +24,7 @@ public class FileWriteTool {
     public String writeFile( @P(value = "文件的相对路径") String relativeFilePath,
                              @P(value = "要写入文件的内容") String content,
                              @ToolMemoryId Long appId){
+        log.info("开始写入文件: {}", relativeFilePath);
         try{
             Path path = Paths.get(relativeFilePath);
             if(!path.isAbsolute()){
