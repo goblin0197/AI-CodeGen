@@ -9,9 +9,12 @@ import com.goblin.aicodergenerater.ai.model.message.AiResponseMessage;
 import com.goblin.aicodergenerater.ai.model.message.StreamMessage;
 import com.goblin.aicodergenerater.ai.model.message.ToolExecutedMessage;
 import com.goblin.aicodergenerater.ai.model.message.ToolRequestMessage;
+import com.goblin.aicodergenerater.constant.AppConstant;
+import com.goblin.aicodergenerater.core.builder.VueProjectBuilder;
 import com.goblin.aicodergenerater.enums.ChatHistoryMessageTypeEnum;
 import com.goblin.aicodergenerater.model.entity.User;
 import com.goblin.aicodergenerater.service.ChatHistoryService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -26,6 +29,13 @@ import java.util.Set;
 @Slf4j
 @Component
 public class JsonMessageStreamHandler {
+
+    @Resource
+    private  VueProjectBuilder vueProjectBuilder;
+
+    public JsonMessageStreamHandler(VueProjectBuilder vueProjectBuilder) {
+        this.vueProjectBuilder = vueProjectBuilder;
+    }
 
     /**
      * 处理 TokenStream（VUE_PROJECT）
@@ -54,6 +64,9 @@ public class JsonMessageStreamHandler {
                     // 流式响应完成后，添加 AI 消息到对话历史
                     String aiResponse = chatHistoryStringBuilder.toString();
                     chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+                    // 使用虚拟现场异步构建 VUE 项目
+                    String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+                    vueProjectBuilder.buildProject(projectPath);
                 })
                 .doOnError(error -> {
                     // 如果AI回复失败，也要记录错误消息
