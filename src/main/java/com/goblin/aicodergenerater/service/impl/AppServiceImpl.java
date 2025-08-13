@@ -3,7 +3,6 @@ package com.goblin.aicodergenerater.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.goblin.aicodergenerater.ai.core.AiCodeGeneratorFacade;
@@ -22,6 +21,7 @@ import com.goblin.aicodergenerater.model.vo.AppVO;
 import com.goblin.aicodergenerater.model.vo.UserVO;
 import com.goblin.aicodergenerater.service.AppService;
 import com.goblin.aicodergenerater.service.ChatHistoryService;
+import com.goblin.aicodergenerater.service.ScreenshotService;
 import com.goblin.aicodergenerater.service.UserService;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -62,6 +62,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Autowired
     private VueProjectBuilder vueProjectBuilder;
 
+    @Resource
+    private ScreenshotService screenshotService;
     @Override
     public AppVO getAppVO(App app) {
         if (app == null) {
@@ -251,7 +253,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         boolean updateResult = this.updateById(updateApp);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 10. 返回可访问的 URL
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        generateAppScreenshotAsync(appId,appDeployUrl);
+        return appDeployUrl;
     }
 
     @Override
@@ -289,4 +293,17 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         return super.removeById(id);
     }
 
+    @Override
+    public void generateAppScreenshotAsync(Long appId, String appUrl){
+        Thread.startVirtualThread(() -> {
+            // 调用截图服务生成并上传图片
+            String screenshotUrl = screenshotService.generateAndUploadScreenshot(appUrl);
+            // 更新应用封面字段
+            App updateApp = new App();
+            updateApp.setId(appId);
+            updateApp.setCover(screenshotUrl);
+            boolean updated = this.updateById(updateApp);
+            ThrowUtils.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面失败");
+        });
+    }
 }

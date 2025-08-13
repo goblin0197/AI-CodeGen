@@ -63,4 +63,11 @@ public interface AppService extends IService<App> {
      * @return 是否属于
      */
     boolean isAppBelongToUser(Long appId, Long userId);
+
+    /**
+     * 异步生成应用截图并更新封面
+     * @param appId
+     * @param appUrl
+     */
+    void generateAppScreenshotAsync(Long appId, String appUrl);
 }
