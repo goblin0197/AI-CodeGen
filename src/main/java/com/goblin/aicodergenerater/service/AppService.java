@@ -1,5 +1,6 @@
 package com.goblin.aicodergenerater.service;
 
+import com.goblin.aicodergenerater.model.dto.AppAddRequest;
 import com.goblin.aicodergenerater.model.dto.AppQueryRequest;
 import com.goblin.aicodergenerater.model.entity.App;
 import com.goblin.aicodergenerater.model.entity.User;
@@ -70,4 +71,6 @@ public interface AppService extends IService<App> {
      * @param appUrl
      */
     void generateAppScreenshotAsync(Long appId, String appUrl);
+
+    Long createApp(AppAddRequest appAddRequest , User loginUser);
 }
