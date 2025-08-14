@@ -72,6 +72,6 @@ public interface AiCodeGeneratorService {
      * @param userMessage 用户消息
      * @return 生成过程的流式响应
      */
-    @SystemMessage(fromResource = "prompt/11codegen-vue-project-system-prompt.txt")
+    @SystemMessage(fromResource = "prompt/codegen-vue-project-system-prompt.txt")
     TokenStream generateVueProjectCodeTokenStream(@MemoryId long appId, @UserMessage String userMessage);
 }

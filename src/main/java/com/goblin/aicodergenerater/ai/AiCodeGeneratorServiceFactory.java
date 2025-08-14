@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.goblin.aicodergenerater.ai.enums.CodeGenTypeEnum;
 import com.goblin.aicodergenerater.ai.tools.FileWriteTool;
+import com.goblin.aicodergenerater.ai.tools.ToolManager;
 import com.goblin.aicodergenerater.exception.BusinessException;
 import com.goblin.aicodergenerater.exception.ErrorCode;
 import com.goblin.aicodergenerater.service.ChatHistoryService;
@@ -44,6 +45,9 @@ public class AiCodeGeneratorServiceFactory {
 
     @Resource
     private ChatHistoryService chatHistoryService;
+
+    @Resource
+    private ToolManager toolManager;
 //    @Bean
 //    public AiCodeGeneratorService aiCodeGeneratorService() {
 //        return AiServices
@@ -127,7 +131,7 @@ public class AiCodeGeneratorServiceFactory {
             case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
                     .streamingChatModel(reasoningStreamingChatModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(new FileWriteTool())
+                    .tools(toolManager.getAllTools())
                     .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                             toolExecutionRequest, "错误：没有名为 " + toolExecutionRequest.name() + " 的工具"))
                     .build();
