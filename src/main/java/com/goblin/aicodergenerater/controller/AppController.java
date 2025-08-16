@@ -17,6 +17,8 @@ import cn.hutool.core.util.StrUtil;
 import com.goblin.aicodergenerater.model.entity.App;
 import com.goblin.aicodergenerater.model.entity.User;
 import com.goblin.aicodergenerater.model.vo.AppVO;
+import com.goblin.aicodergenerater.ratelimit.annotation.RateLimit;
+import com.goblin.aicodergenerater.ratelimit.enums.RateLimitType;
 import com.goblin.aicodergenerater.service.AppService;
 import com.goblin.aicodergenerater.service.ProjectDownloadService;
 import com.goblin.aicodergenerater.service.UserService;
@@ -25,6 +27,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
@@ -174,6 +177,15 @@ public class AppController {
      * 分页查询精选的应用列表（用户）
      */
     @PostMapping("/good/list/page/vo")
+    @Cacheable(
+            value = "good_app_page",
+            key = "T(com.yupi.yuaicodemother.utils.CacheKeyUtils).generateKey(#appQueryRequest)",
+            condition = "#appQueryRequest.pageNum <= 10"
+    )
+    /*
+    * 【注意】 使用@Cacheable是线程安全的，但是会发生缓存击穿问题（缓存失效时大量并发请求过来打到数据库）
+    *  如果需要避免，则最好是添加分布式锁并手动管理缓存
+    * */
     public BaseResponse<Page<AppVO>> listGoodAppVOByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
 
@@ -308,6 +320,7 @@ public class AppController {
      * @return 生成结果流
      */
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @RateLimit(rate = 5 , rateInterval = 60 , limitType = RateLimitType.USER , message = "请求对话过于频繁，请稍后再试")
     public  Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
                                                         @RequestParam String message,
                                                         HttpServletRequest request) {

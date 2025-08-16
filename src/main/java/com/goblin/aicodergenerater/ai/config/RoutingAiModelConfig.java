@@ -1,40 +1,46 @@
 package com.goblin.aicodergenerater.ai.config;
 
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-/**
- * @Author goblin
- * @Date 2025/8/10 17:23
- * @注释
- */
 @Configuration
+@ConfigurationProperties(prefix = "langchain4j.open-ai.routing-chat-model")
 @Data
-@ConfigurationProperties(prefix = "langchain4j.open-ai.reasoning-streaming-chat-model")
-public class ReasoningStreamingChatModelConfig {
+public class RoutingAiModelConfig {
+
     private String baseUrl;
+
     private String apiKey;
+
     private String modelName;
+
     private Integer maxTokens;
+
     private Double temperature;
+
     private Boolean logRequests = false;
+
     private Boolean logResponses = false;
+
+    /**
+     * 创建用于路由判断的ChatModel
+     */
     @Bean
-    @Scope("prototype") // Spring 容器每次获取 Bean 时都创建一个全新的实例，而不是复用单例
-    public StreamingChatModel reasoningStreamingChatModel() {
-        return OpenAiStreamingChatModel.builder()
+    @Scope("prototype")
+    public ChatModel routingChatModelPrototype() {
+        return OpenAiChatModel.builder()
                 .apiKey(apiKey)
-                .baseUrl(baseUrl)
                 .modelName(modelName)
+                .baseUrl(baseUrl)
                 .maxTokens(maxTokens)
+                .temperature(temperature)
                 .logRequests(logRequests)
                 .logResponses(logResponses)
-                .temperature(temperature)
                 .build();
     }
 }

@@ -8,33 +8,36 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-/**
- * @Author goblin
- * @Date 2025/8/10 17:23
- * @注释
- */
 @Configuration
+@ConfigurationProperties(prefix = "langchain4j.open-ai.streaming-chat-model")
 @Data
-@ConfigurationProperties(prefix = "langchain4j.open-ai.reasoning-streaming-chat-model")
-public class ReasoningStreamingChatModelConfig {
+public class StreamingChatModelConfig {
+
     private String baseUrl;
+
     private String apiKey;
+
     private String modelName;
+
     private Integer maxTokens;
+
     private Double temperature;
-    private Boolean logRequests = false;
-    private Boolean logResponses = false;
+
+    private boolean logRequests;
+
+    private boolean logResponses;
+
     @Bean
-    @Scope("prototype") // Spring 容器每次获取 Bean 时都创建一个全新的实例，而不是复用单例
-    public StreamingChatModel reasoningStreamingChatModel() {
+    @Scope("prototype")
+    public StreamingChatModel streamingChatModelPrototype() {
         return OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .maxTokens(maxTokens)
+                .temperature(temperature)
                 .logRequests(logRequests)
                 .logResponses(logResponses)
-                .temperature(temperature)
                 .build();
     }
 }
