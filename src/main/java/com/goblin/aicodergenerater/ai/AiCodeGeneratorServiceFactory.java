@@ -4,6 +4,7 @@ package com.goblin.aicodergenerater.ai;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.goblin.aicodergenerater.ai.enums.CodeGenTypeEnum;
+import com.goblin.aicodergenerater.ai.guardrail.PromptSafetyInputGuardrail;
 import com.goblin.aicodergenerater.ai.tools.FileWriteTool;
 import com.goblin.aicodergenerater.ai.tools.ToolManager;
 import com.goblin.aicodergenerater.exception.BusinessException;
@@ -127,22 +128,26 @@ public class AiCodeGeneratorServiceFactory {
                 // 使用多例模式的 StreamingChatModel 解决并发问题
                 StreamingChatModel openAiStreamingChatModel = SpringContextUtils.getBean("streamingChatModelPrototype", StreamingChatModel.class);
                 yield AiServices.builder(AiCodeGeneratorService.class)
-                    .chatModel(chatModel)
-                    .streamingChatModel(openAiStreamingChatModel)
-                    .chatMemory(chatMemory)
-                    .build();
+                        .chatModel(chatModel)
+                        .streamingChatModel(openAiStreamingChatModel)
+                        .chatMemory(chatMemory)
+                        .maxSequentialToolsInvocations(30) // 设置最多连续调用30次工具
+                        .inputGuardrails(new PromptSafetyInputGuardrail())  // 添加输入护轨
+                        .build();
             }
             // Vue 项目生成使用推理模型
             case VUE_PROJECT -> {
                 // 使用多例模式的 StreamingChatModel 解决并发问题
                 StreamingChatModel reasoningStreamingChatModel = SpringContextUtils.getBean("reasoningStreamingChatModelPrototype", StreamingChatModel.class);
                 yield AiServices.builder(AiCodeGeneratorService.class)
-                    .streamingChatModel(reasoningStreamingChatModel)
-                    .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(toolManager.getAllTools())
-                    .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
+                        .streamingChatModel(reasoningStreamingChatModel)
+                        .chatMemoryProvider(memoryId -> chatMemory)
+                        .tools(toolManager.getAllTools())
+                        .maxSequentialToolsInvocations(30) // 设置最多连续调用30次工具
+                        .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                             toolExecutionRequest, "错误：没有名为 " + toolExecutionRequest.name() + " 的工具"))
-                    .build();
+                        .inputGuardrails(new PromptSafetyInputGuardrail())  // 添加输入护轨
+                        .build();
             }
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR,
                     "不支持的代码生成类型: " + codeGenType.getValue());
