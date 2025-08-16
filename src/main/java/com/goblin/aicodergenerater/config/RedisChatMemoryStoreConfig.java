@@ -1,5 +1,6 @@
 package com.goblin.aicodergenerater.config;
 
+import cn.hutool.core.util.StrUtil;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -22,18 +23,21 @@ public class RedisChatMemoryStoreConfig {
     private String password;
 
     private String user;
+
     private long ttl;
 
     private int database;
 
     @Bean
     public RedisChatMemoryStore redisChatMemoryStore() {
-        return RedisChatMemoryStore.builder()
+        RedisChatMemoryStore.Builder builder = RedisChatMemoryStore.builder()
                 .host(host)
                 .port(port)
                 .password(password)
-                .user(user)
-                .ttl(ttl)
-                .build();
+                .ttl(ttl);
+        if(StrUtil.isNotBlank(password)){
+            builder.user(StrUtil.isNotBlank(user) ? user : "default");
+        }
+        return builder.build();
     }
 }
