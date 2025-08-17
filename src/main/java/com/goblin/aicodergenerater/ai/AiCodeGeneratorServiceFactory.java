@@ -9,6 +9,7 @@ import com.goblin.aicodergenerater.ai.tools.FileWriteTool;
 import com.goblin.aicodergenerater.ai.tools.ToolManager;
 import com.goblin.aicodergenerater.exception.BusinessException;
 import com.goblin.aicodergenerater.exception.ErrorCode;
+import com.goblin.aicodergenerater.monitor.AiModelMonitorListener;
 import com.goblin.aicodergenerater.service.ChatHistoryService;
 import com.goblin.aicodergenerater.utils.SpringContextUtils;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
@@ -78,20 +79,20 @@ public class AiCodeGeneratorServiceFactory {
     /**
      * AI 服务实例缓存
      * 缓存策略：
-     *  - 最大缓存 1000 个实例
-     *  - 写入后 30 分钟过期
-     *  - 访问后 10 分钟过期
+     * - 最大缓存 1000 个实例
+     * - 写入后 30 分钟过期
+     * - 访问后 10 分钟过期
      */
-    private final Cache<String ,AiCodeGeneratorService> serviceCache = Caffeine.newBuilder()
+    private final Cache<String, AiCodeGeneratorService> serviceCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(30))
             .expireAfterAccess(Duration.ofMinutes(10))
             .removalListener((key, value, cause) -> {
-                log.debug("AI 服务实例被溢出，appId：{}，原因：{}",key,cause);
+                log.debug("AI 服务实例被溢出，appId：{}，原因：{}", key, cause);
             })
             .build();
 
-    public AiCodeGeneratorService getAiCodeGeneratorService(Long appId){
+    public AiCodeGeneratorService getAiCodeGeneratorService(Long appId) {
         return getAiCodeGeneratorService(appId, CodeGenTypeEnum.HTML);
     }
 
@@ -111,7 +112,7 @@ public class AiCodeGeneratorServiceFactory {
     }
 
     private AiCodeGeneratorService createAiCodeGeneratorService(Long appId, CodeGenTypeEnum codeGenType) {
-        log.info("为 appId：{} 创建新的 AI 服务实例",appId);
+        log.info("为 appId：{} 创建新的 AI 服务实例", appId);
         // 根据 appId 构建独立的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory
                 .builder()
@@ -145,7 +146,7 @@ public class AiCodeGeneratorServiceFactory {
                         .tools(toolManager.getAllTools())
                         .maxSequentialToolsInvocations(30) // 设置最多连续调用30次工具
                         .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
-                            toolExecutionRequest, "错误：没有名为 " + toolExecutionRequest.name() + " 的工具"))
+                                toolExecutionRequest, "错误：没有名为 " + toolExecutionRequest.name() + " 的工具"))
                         .inputGuardrails(new PromptSafetyInputGuardrail())  // 添加输入护轨
                         .build();
             }

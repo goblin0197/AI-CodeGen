@@ -1,7 +1,9 @@
 package com.goblin.aicodergenerater.ai.config;
 
+import com.goblin.aicodergenerater.monitor.AiModelMonitorListener;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +28,9 @@ public class RoutingAiModelConfig {
     private Boolean logRequests = false;
 
     private Boolean logResponses = false;
+
+    @Resource
+    private AiModelMonitorListener aiModelMonitorListener;
 
     /**
      * 创建用于路由判断的ChatModel

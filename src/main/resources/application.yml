@@ -2,23 +2,46 @@ spring:
   profiles:
     active: local
   application:
-    name: ai-code-generater-backend
+    name: xxxx
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ai_code_generater
+    url: jdbc:mysql://localhost:xxxx/xxxx
     username: root
-    password: 123456
+    password: xxxx
+  # redis
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      ttl: 3600
+      # langchain4j 使用的 database 默认为 0 ， 不知道能不能改
+      database: 1
+      password: xxxx
+      user: xxxx
+  # session 配置
+  session:
+    store-type: redis
+    # session 30 天过期
+    timeout: 2592000
+
 server:
   port: 8123
   servlet:
     context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
+
+
 # springdoc-openapi
 springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: com.goblin.aicodergenerater.controller
+
 # knife4j
 knife4j:
   enable: true
@@ -26,14 +49,58 @@ knife4j:
     language: zh_cn
 
 # AI
+# 使用魔搭社区
 langchain4j:
   open-ai:
-    chat-model:
-      base-url: https://api.moonshot.cn/v1 # https://api.deepseek.com
+    # 智能路由 AI 模型配置（用于简单的分类任务）
+    routing-chat-model:
+      base-url: https://api-inference.modelscope.cn/v1
       api-key: xxxx
-      model-name: kimi-k2-turbo-preview # deepseek-chat
+      model-name: Qwen/Qwen2.5-7B-Instruct-1M  # 简单任务使用简单模型就可以，速度也比较快
       log-requests: true
       log-responses: true
-      max-retries: 0
-      timeout: 120000
-      max-tokens: 8192
+      max-tokens: 100
+    # 推理 AI 模型配置（用于复杂的推理任务）
+    reasoning-streaming-chat-model:
+      base-url: https://api-inference.modelscope.cn/v1
+      api-key: xxxx
+      model-name: deepseek-ai/DeepSeek-R1-0528
+      log-requests: true
+      log-responses: true
+      max-tokens: 32768
+      temperature: 0.1
+    streaming-chat-model:
+      base-url: https://api-inference.modelscope.cn/v1
+      api-key: xxxx
+      model-name: Qwen/Qwen3-Coder-480B-A35B-Instruct
+      log-requests: true
+      log-responses: true
+    chat-model:
+      base-url: https://api-inference.modelscope.cn/v1
+      api-key: xxxx
+      model-name: Qwen/Qwen3-Coder-480B-A35B-Instruct
+      log-requests: true
+      log-responses: true
+      max-retries: 2
+# 对象存储
+s3:
+  client:
+    host: http://127.0.0.1
+    accessKey: xxxx
+    secretKey: xxxx
+    bucket: xxxx
+
+
+logging:
+  level:
+    com.fasterxml.jackson: DEBUG
+
+# 可观测性
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always

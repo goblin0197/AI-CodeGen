@@ -74,7 +74,7 @@ public class AppController {
         }
         // 登录用户
         User loginUser = userService.getLoginUser(request);
-        
+
         // 校验应用是否属于当前用户
         Long appId = appUpdateRequest.getId();
         // 判断应用是否存在
@@ -84,7 +84,7 @@ public class AppController {
 //        boolean isOwner = appService.isAppBelongToUser(appId, loginUser.getId());
         // 仅本人可更新
         ThrowUtils.throwIf(!oldApp.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR);
-        
+
         // 目前只支持修改应用名称
         App app = new App();
         app.setId(appId);
@@ -111,7 +111,7 @@ public class AppController {
         }
         // 登录用户
         User loginUser = userService.getLoginUser(request);
-        
+
         // 校验应用是否属于当前用户
         Long appId = deleteRequest.getId();
         // 判断是否存在
@@ -124,7 +124,7 @@ public class AppController {
         }
 //        boolean isOwner = appService.isAppBelongToUser(appId, loginUser.getId());
 //        ThrowUtils.throwIf(!isOwner, ErrorCode.NO_AUTH_ERROR, "只能删除自己的应用");
-        
+
         boolean result = appService.removeById(appId);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
@@ -148,6 +148,7 @@ public class AppController {
 //        return ResultUtils.success(appService.getAppVO(app));
 //    }
 //
+
     /**
      * 分页查询自己的应用列表（用户）
      */
@@ -179,13 +180,13 @@ public class AppController {
     @PostMapping("/good/list/page/vo")
     @Cacheable(
             value = "good_app_page",
-            key = "T(com.yupi.yuaicodemother.utils.CacheKeyUtils).generateKey(#appQueryRequest)",
+            key = "T(com.goblin.aicodergenerater.utils.CacheKeyUtils).generateKey(#appQueryRequest)",
             condition = "#appQueryRequest.pageNum <= 10"
     )
     /*
-    * 【注意】 使用@Cacheable是线程安全的，但是会发生缓存击穿问题（缓存失效时大量并发请求过来打到数据库）
-    *  如果需要避免，则最好是添加分布式锁并手动管理缓存
-    * */
+     * 【注意】 使用@Cacheable是线程安全的，但是会发生缓存击穿问题（缓存失效时大量并发请求过来打到数据库）
+     *  如果需要避免，则最好是添加分布式锁并手动管理缓存
+     * */
     public BaseResponse<Page<AppVO>> listGoodAppVOByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
 
@@ -320,10 +321,10 @@ public class AppController {
      * @return 生成结果流
      */
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @RateLimit(rate = 5 , rateInterval = 60 , limitType = RateLimitType.USER , message = "请求对话过于频繁，请稍后再试")
-    public  Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
-                                                        @RequestParam String message,
-                                                        HttpServletRequest request) {
+    @RateLimit(rate = 5, rateInterval = 60, limitType = RateLimitType.USER, message = "请求对话过于频繁，请稍后再试")
+    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
+                                                       @RequestParam String message,
+                                                       HttpServletRequest request) {
         // 1. 参数校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID无效");
         ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
@@ -333,13 +334,13 @@ public class AppController {
         Flux<String> contentFlux = appService.chatToGenCode(appId, message, loginUser);
         // 4. 转换为 ServerSentEvent 格式
         return contentFlux.map(chunk -> {
-            // 将内容包装成json对象
-            Map<String ,String> wrapper = Map.of("d",chunk);
-            String jsonData = JSONUtil.toJsonStr(wrapper);
-            return ServerSentEvent.<String>builder()
-                    .data(jsonData)
-                    .build();
-        })
+                    // 将内容包装成json对象
+                    Map<String, String> wrapper = Map.of("d", chunk);
+                    String jsonData = JSONUtil.toJsonStr(wrapper);
+                    return ServerSentEvent.<String>builder()
+                            .data(jsonData)
+                            .build();
+                })
                 .concatWith(Mono.just(
                         // 发送结束事件
                         ServerSentEvent.<String>builder()
@@ -379,7 +380,7 @@ public class AppController {
      * @param response 响应
      */
     @GetMapping("/download/{appId}")
-    public void downloadAppCode(@PathVariable Long appId , HttpServletRequest request , HttpServletResponse response){
+    public void downloadAppCode(@PathVariable Long appId, HttpServletRequest request, HttpServletResponse response) {
         // 1. 基础校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID无效");
         // 2. 查询应用信息
@@ -387,8 +388,8 @@ public class AppController {
         ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
         // 3. 权限校验：只有应用创建者可以下载代码
         User loginUser = userService.getLoginUser(request);
-        if(!app.getUserId().equals(app.getUserId())){
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR,"无权限下载该应用代码");
+        if (!app.getUserId().equals(app.getUserId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限下载该应用代码");
         }
         // 4. 构建应用代码目录路径（生成目录，非部署目录）
         String codeGenType = app.getCodeGenType();
@@ -400,6 +401,6 @@ public class AppController {
         // 6. 生成下载文件名（不建议添加中文内容）
         String downloadFileName = String.valueOf(appId);
         // 7. 调用通用下载服务
-        projectDownloadService.downloadProjectAsZip(sourceDirPath,downloadFileName,response);
+        projectDownloadService.downloadProjectAsZip(sourceDirPath, downloadFileName, response);
     }
 }

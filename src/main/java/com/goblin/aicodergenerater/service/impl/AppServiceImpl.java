@@ -22,6 +22,8 @@ import com.goblin.aicodergenerater.model.entity.App;
 import com.goblin.aicodergenerater.model.entity.User;
 import com.goblin.aicodergenerater.model.vo.AppVO;
 import com.goblin.aicodergenerater.model.vo.UserVO;
+import com.goblin.aicodergenerater.monitor.MonitorContext;
+import com.goblin.aicodergenerater.monitor.MonitorContextHolder;
 import com.goblin.aicodergenerater.service.AppService;
 import com.goblin.aicodergenerater.service.ChatHistoryService;
 import com.goblin.aicodergenerater.service.ScreenshotService;
@@ -112,7 +114,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Override
     public QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest) {
-        ThrowUtils.throwIf(appQueryRequest == null ,ErrorCode.PARAMS_ERROR, "请求参数为空");
+        ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
 
         QueryWrapper queryWrapper = new QueryWrapper();
         // 根据id查询
@@ -157,7 +159,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 排序
         String sortField = appQueryRequest.getSortField();
         String sortOrder = appQueryRequest.getSortOrder();
-        queryWrapper.orderBy(sortField,"ascend".equals(sortOrder));
+        queryWrapper.orderBy(sortField, "ascend".equals(sortOrder));
 //        // 按优先级降序、创建时间降序排序
 //        queryWrapper.orderBy("priority", false)
 //                   .orderBy("createTime", false);
@@ -168,22 +170,35 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
         // 1. 校验参数
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "appId不能为空");
-        ThrowUtils.throwIf(StrUtil.isBlank(message) , ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
         // 2. 查询应用信息
         App app = this.getById(appId);
         ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
         // 3. 验证用户是否有权限访问该应用，仅本人可以生成代码
-        ThrowUtils.throwIf(!app.getUserId().equals(loginUser.getId()) ,ErrorCode.NO_AUTH_ERROR,"无权限访问该应用");
+        ThrowUtils.throwIf(!app.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限访问该应用");
         // 4. 获取应用的代码生成类型
         String codeGenTypeStr = app.getCodeGenType();
         CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenTypeStr);
-        ThrowUtils.throwIf(codeGenTypeEnum == null ,ErrorCode.SYSTEM_ERROR ,"不支持的代码生成类型");
+        ThrowUtils.throwIf(codeGenTypeEnum == null, ErrorCode.SYSTEM_ERROR, "不支持的代码生成类型");
         // 5. 通过校验后，添加用户消息到对话历史
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
-        // 6. 调用 AI 生成代码 （流式）
+        // 6. 设置监控上下文
+        MonitorContextHolder.setContext(
+                MonitorContext.builder()
+                        .userId(loginUser.getId().toString())
+                        .appId(appId.toString())
+                        .build()
+        );
+        log.warn("AppService --- 当前线程名称：{}", Thread.currentThread().getName());
+        log.info("AppService --- 线程上下文 MonitorContextHolder：{}", MonitorContextHolder.getContext().toString());
+        // 7. 调用 AI 生成代码 （流式）
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
-        // 7. 收集 AI 响应内容并在完成后记录到对话历史
-        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
+        // 8. 收集 AI 响应内容并在完成后记录到对话历史
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum)
+                .doFinally(signalType -> {
+                    // 流结束时清理（无论成功/失败/取消）
+                    MonitorContextHolder.clearContext();
+                });
 //        StringBuilder aiResponseBuilder = new StringBuilder();
 //        return contentFlux.map(chunk ->{
 //            aiResponseBuilder.append(chunk);
@@ -207,6 +222,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     /**
      * 部署应用
      * 支‍持重复部署。如果应用已经有 deployKey，就直接使用现有的；如果没有，就生成一个新的
+     *
      * @param appId
      * @param loginUser
      * @return
@@ -215,15 +231,15 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     public String deployApp(Long appId, User loginUser) {
         // 1. 参数校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用Id不能为空");
-        ThrowUtils.throwIf(loginUser == null ,ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
         // 2. 查询应用信息
         App app = this.getById(appId);
         ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
         // 3. 验证用户是否有权限访问该应用，仅本人可以部署
-        ThrowUtils.throwIf(!app.getUserId().equals(loginUser.getId()) ,ErrorCode.NO_AUTH_ERROR,"无权限部署该应用");
+        ThrowUtils.throwIf(!app.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限部署该应用");
         // 4. 检查是否已有deployKey ， 没有则生成6位deployKey（大小写字母 + 数字）
         String deployKey = app.getDeployKey();
-        if(StrUtil.isBlank(deployKey)){
+        if (StrUtil.isBlank(deployKey)) {
             deployKey = RandomUtil.randomString(6);
         }
         // 5. 获取代码生成类型，构建源目录路径
@@ -232,12 +248,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
         // 6. 检查源目录是否存在
         File sourceDir = new File(sourceDirPath);
-        if(!sourceDir.exists() || !sourceDir.isDirectory()){
+        if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用代码不存在，请先生成代码");
         }
         // 7. 如果是 Vue 项目， 需要执行构建
         CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
-        if(codeGenTypeEnum == CodeGenTypeEnum.VUE_PROJECT){
+        if (codeGenTypeEnum == CodeGenTypeEnum.VUE_PROJECT) {
             // 执行构建
             boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
             ThrowUtils.throwIf(!buildSuccess, ErrorCode.SYSTEM_ERROR, "Vue 项目构建失败，请检查代码和依赖");
@@ -264,7 +280,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 10. 返回可访问的 URL
         String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
-        generateAppScreenshotAsync(appId,appDeployUrl);
+        generateAppScreenshotAsync(appId, appDeployUrl);
         return appDeployUrl;
     }
 
@@ -276,6 +292,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         App app = this.getById(appId);
         return app != null && userId.equals(app.getUserId());
     }
+
     /**
      * 删除应用时关联删除对话历史
      *
@@ -304,7 +321,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     }
 
     @Override
-    public void generateAppScreenshotAsync(Long appId, String appUrl){
+    public void generateAppScreenshotAsync(Long appId, String appUrl) {
         Thread.startVirtualThread(() -> {
             // 调用截图服务生成并上传图片
             String screenshotUrl = screenshotService.generateAndUploadScreenshot(appUrl);
