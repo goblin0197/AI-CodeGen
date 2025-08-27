@@ -1,9 +1,9 @@
-package com.goblin.aicodergenerater.cos;
+package com.goblin.aicodegenerator.manager;
 
+import com.goblin.aicodegenerator.config.S3ClientConfig;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -11,7 +11,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.File;
-import java.nio.file.Paths;
 
 /**
  * @Author goblin

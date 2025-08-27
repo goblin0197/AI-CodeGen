@@ -1,4 +1,4 @@
-package com.goblin.aicodergenerater.cos;
+package com.goblin.aicodegenerator.config;
 
 import lombok.Data;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
