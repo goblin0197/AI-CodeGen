@@ -51,7 +51,6 @@ public class AppController {
     private AppService appService;
 
 //    @Resource
-//    @Lazy
 //    private InnerUserService userService;
 
     /**
@@ -182,8 +181,8 @@ public class AppController {
     @PostMapping("/good/list/page/vo")
     @Cacheable(
             value = "good_app_page",
-            key = "T(com.goblin.aicodergenerater.utils.CacheKeyUtils).generateKey(#appQueryRequest)",
-            condition = "#appQueryRequest.pageNum <= 10"
+            key = "T(com.goblin.aicodegenerator.utils.CacheKeyUtils).generateKey(#appQueryRequest)",
+            unless = "#appQueryRequest.pageNum <= 10"
     )
     /*
      * 【注意】 使用@Cacheable是线程安全的，但是会发生缓存击穿问题（缓存失效时大量并发请求过来打到数据库）
