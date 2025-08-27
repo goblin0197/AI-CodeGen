@@ -16,7 +16,7 @@ import static com.goblin.aicodecommon.constant.UserConstant.USER_LOGIN_STATE;
 /**
  * 内部使用的用户服务。
  */
-public interface innerUserService {
+public interface InnerUserService {
 
     /**
      * 获取当前登录用户
