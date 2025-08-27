@@ -1,10 +1,10 @@
 package com.goblin.aicodeuser.service;
 
 
-import com.goblin.aicodemodel.model.dto.UserQueryRequest;
-import com.goblin.aicodemodel.model.entity.User;
-import com.goblin.aicodemodel.model.vo.LoginUserVO;
-import com.goblin.aicodemodel.model.vo.UserVO;
+import com.goblin.aicodegenerator.model.dto.UserQueryRequest;
+import com.goblin.aicodegenerator.model.entity.User;
+import com.goblin.aicodegenerator.model.vo.LoginUserVO;
+import com.goblin.aicodegenerator.model.vo.UserVO;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import jakarta.servlet.http.HttpServletRequest;

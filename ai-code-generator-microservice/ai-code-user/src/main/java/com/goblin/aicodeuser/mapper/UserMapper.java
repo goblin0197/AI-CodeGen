@@ -1,7 +1,7 @@
 package com.goblin.aicodeuser.mapper;
 
 
-import com.goblin.aicodemodel.model.entity.User;
+import com.goblin.aicodegenerator.model.entity.User;
 import com.mybatisflex.core.BaseMapper;
 
 /**

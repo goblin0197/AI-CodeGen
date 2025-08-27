@@ -4,14 +4,14 @@ package com.goblin.aicodeuser.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.goblin.aicodecommon.exception.BusinessException;
-import com.goblin.aicodecommon.exception.ErrorCode;
+import com.goblin.aicodegenerator.exception.BusinessException;
+import com.goblin.aicodegenerator.exception.ErrorCode;
 import com.goblin.aicodeuser.mapper.UserMapper;
-import com.goblin.aicodemodel.model.dto.UserQueryRequest;
-import com.goblin.aicodemodel.model.entity.User;
-import com.goblin.aicodemodel.model.enums.UserRoleEnum;
-import com.goblin.aicodemodel.model.vo.LoginUserVO;
-import com.goblin.aicodemodel.model.vo.UserVO;
+import com.goblin.aicodegenerator.model.dto.UserQueryRequest;
+import com.goblin.aicodegenerator.model.entity.User;
+import com.goblin.aicodegenerator.model.enums.UserRoleEnum;
+import com.goblin.aicodegenerator.model.vo.LoginUserVO;
+import com.goblin.aicodegenerator.model.vo.UserVO;
 import com.goblin.aicodeuser.service.UserService;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.goblin.aicodecommon.constant.UserConstant.USER_LOGIN_STATE;
+import static com.goblin.aicodegenerator.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 用户 服务层实现。

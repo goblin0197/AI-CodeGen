@@ -1,11 +1,11 @@
 package com.goblin.aicodeuser.aop;
 
 
-import com.goblin.aicodecommon.annotation.AuthCheck;
-import com.goblin.aicodecommon.exception.BusinessException;
-import com.goblin.aicodecommon.exception.ErrorCode;
-import com.goblin.aicodemodel.model.entity.User;
-import com.goblin.aicodemodel.model.enums.UserRoleEnum;
+import com.goblin.aicodegenerator.annotation.AuthCheck;
+import com.goblin.aicodegenerator.exception.BusinessException;
+import com.goblin.aicodegenerator.exception.ErrorCode;
+import com.goblin.aicodegenerator.model.entity.User;
+import com.goblin.aicodegenerator.model.enums.UserRoleEnum;
 import com.goblin.aicodeuser.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
