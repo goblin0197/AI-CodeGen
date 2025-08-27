@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: yu-ai-code-screenshot
+  profiles:
+    active: local
+server:
+  port: 8127
+  servlet:
+    context-path: /api
+# 添加 COS 对象存储配置 (使用s3)
+
+s3:
+  client:
+    host: your-custom-domain.com
+    accessKey: your-access-key
+    secretKey: our-secret-key
+    bucket: your-bucket-name
